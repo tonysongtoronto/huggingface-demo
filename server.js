@@ -5,30 +5,33 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
 
 // 提供静态文件（前端界面）
 app.use(express.static('public'));
+app.use(express.json());
 
 const HF_API_KEY = process.env.HF_API_KEY;
 const HF_API_URL = "https://router.huggingface.co/v1/chat/completions";
 
-// 可用的免费模型列表
+// 经过测试可用的模型列表
 const AVAILABLE_MODELS = {
-  "smollm": "HuggingFaceTB/SmolLM3-3B:hf-inference",
-  "qwen": "Qwen/Qwen2.5-0.5B-Instruct:hf-inference",
-  "llama": "meta-llama/Llama-3.2-1B-Instruct:together",
-  "phi": "microsoft/Phi-3-mini-4k-instruct:together"
+  "llama": "meta-llama/Llama-3.3-70B-Instruct",
+  "gemma": "google/gemma-2-9b-it",
+  "qwen": "Qwen/Qwen2.5-72B-Instruct",
+  "deepseek": "deepseek-ai/DeepSeek-V3",
+  "mixtral": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+   "openai":"openai/gpt-oss-120b:groq"
 };
 
-// 默认使用的模型
-const DEFAULT_MODEL = AVAILABLE_MODELS.smollm;
+const DEFAULT_MODEL = AVAILABLE_MODELS.llama;
 
 /**
  * 调用 HuggingFace API
  */
 async function callHuggingFace(messages, model = DEFAULT_MODEL) {
   try {
+    console.log(`调用模型: ${model}`);
+    
     const response = await fetch(HF_API_URL, {
       method: "POST",
       headers: {
@@ -43,14 +46,30 @@ async function callHuggingFace(messages, model = DEFAULT_MODEL) {
       })
     });
 
-    const data = await response.json();
+    console.log(`响应状态: ${response.status} ${response.statusText}`);
+
+    const textResponse = await response.text();
+    console.log(`响应内容 (前200字符): ${textResponse.substring(0, 200)}`);
+
+    let data;
+    try {
+      data = JSON.parse(textResponse);
+    } catch (parseError) {
+      console.error("JSON 解析失败:", textResponse);
+      throw new Error(`API 返回了无效的 JSON: ${textResponse.substring(0, 200)}`);
+    }
 
     if (data.error) {
-      throw new Error(data.error);
+      const errorMsg = typeof data.error === 'string' 
+        ? data.error 
+        : JSON.stringify(data.error);
+      console.error("API 返回错误:", errorMsg);
+      throw new Error(errorMsg);
     }
 
     if (!data.choices || !data.choices[0]) {
-      throw new Error("Invalid response format from HuggingFace API");
+      console.error("响应格式无效:", JSON.stringify(data));
+      throw new Error("API 响应格式不正确");
     }
 
     return {
@@ -60,27 +79,24 @@ async function callHuggingFace(messages, model = DEFAULT_MODEL) {
     };
 
   } catch (error) {
-    console.error("HuggingFace API Error:", error.message);
+    console.error("HuggingFace API 完整错误:", error);
     throw error;
   }
 }
 
 /**
  * POST /chat - 聊天接口
- * Body: { message: string, model?: string }
  */
 app.post("/chat", async (req, res) => {
   try {
     const { message, model } = req.body;
 
-    // 验证输入
     if (!message) {
       return res.status(400).json({
         error: "Message is required"
       });
     }
 
-    // 选择模型
     const selectedModel = model && AVAILABLE_MODELS[model] 
       ? AVAILABLE_MODELS[model] 
       : DEFAULT_MODEL;
@@ -88,14 +104,17 @@ app.post("/chat", async (req, res) => {
     console.log(`[${new Date().toISOString()}] 收到请求: "${message}"`);
     console.log(`使用模型: ${selectedModel}`);
 
-    // 调用 HuggingFace API
     const result = await callHuggingFace([
       { role: "user", content: message }
     ], selectedModel);
 
     console.log(`[${new Date().toISOString()}] 响应生成成功`);
 
-    // 返回结果
+      console.log('*************************');
+
+     console.log(result);
+        console.log('*************************');
+
     res.json({
       reply: result.content,
       model: result.model,
@@ -103,18 +122,19 @@ app.post("/chat", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("聊天错误:", error.message);
+    console.error("完整错误对象:", error);
     
     res.status(500).json({
-      error: "Failed to generate response",
-      details: error.message
+      error: "生成响应失败",
+      details: error.message,
+      suggestion: "请尝试使用 Llama 或 Gemma 模型，或检查 API Key 是否有效"
     });
   }
 });
 
 /**
  * POST /chat/stream - 流式聊天接口（多轮对话）
- * Body: { messages: [{role: string, content: string}], model?: string }
  */
 app.post("/chat/stream", async (req, res) => {
   try {
@@ -146,7 +166,7 @@ app.post("/chat/stream", async (req, res) => {
     console.error("Error:", error.message);
     
     res.status(500).json({
-      error: "Failed to generate response",
+      error: "生成响应失败",
       details: error.message
     });
   }
@@ -158,8 +178,10 @@ app.post("/chat/stream", async (req, res) => {
 app.get("/models", (req, res) => {
   res.json({
     available_models: Object.keys(AVAILABLE_MODELS),
-    default_model: "smollm",
-    models: AVAILABLE_MODELS
+    default_model: "llama",
+    models: AVAILABLE_MODELS,
+    verified: ["llama", "gemma"],
+    note: "所有模型都需要有效的 HuggingFace API Key"
   });
 });
 
@@ -188,8 +210,6 @@ app.get("/api", (req, res) => {
     }
   });
 });
-
-// 注意: GET / 会自动提供 public/index.html（由 express.static 处理）
 
 // 启动服务器
 const PORT = process.env.PORT || 3000;
