@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HuggingFace AI Chat1</title>
+    <title>HuggingFace AI Chat</title>
     <style>
         * {
             margin: 0;
@@ -45,6 +45,20 @@
         .chat-header h1 {
             font-size: 24px;
             font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .message-counter {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .model-selector {
@@ -244,15 +258,15 @@
             padding: 8px 16px;
             border: none;
             border-radius: 20px;
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
             font-size: 13px;
             cursor: pointer;
             transition: background 0.3s;
         }
 
         .clear-button:hover {
-            background: rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .error-message {
@@ -305,10 +319,11 @@
     </style>
 </head>
 <body>
-    <div class="chat-container">openai
+    <div class="chat-container">
         <div class="chat-header">
             <h1>🤖 HuggingFace AI Chat</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="header-controls">
+                <div class="message-counter" id="messageCounter">对话: 0 轮</div>
                 <button class="clear-button" onclick="clearChat()">清空对话</button>
                 <select class="model-selector" id="modelSelector">
                     <option value="smollm">SmolLM 1.7B (推荐)</option>
@@ -316,7 +331,7 @@
                     <option value="llama">Llama 3.3 70B</option>
                     <option value="mistral">Mistral 7B</option>
                     <option value="gemma">Gemma 2 9B</option>
-                     <option value="openai">gpt oss 120b</option>
+                    <option value="openai">GPT OSS 120B</option>
                 </select>
             </div>
         </div>
@@ -328,7 +343,7 @@
                 <div class="message-avatar">🤖</div>
                 <div>
                     <div class="message-content">
-                        你好！我是 HuggingFace AI 助手。有什么我可以帮助你的吗？
+                        你好！我是 HuggingFace AI 助手。我现在支持多轮对话，可以记住我们之前的聊天内容。有什么我可以帮助你的吗？
                     </div>
                     <div class="message-time" id="welcomeTime"></div>
                 </div>
@@ -361,21 +376,34 @@
     </div>
 
     <script>
-        // 初始化
+        // ============ 全局变量 ============
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const sendButton = document.getElementById('sendButton');
         const typingIndicator = document.getElementById('typingIndicator');
         const errorMessage = document.getElementById('errorMessage');
         const modelSelector = document.getElementById('modelSelector');
+        const messageCounter = document.getElementById('messageCounter');
 
-        // 设置欢迎消息时间
+        // 对话历史数组（多轮对话核心）
+        let conversationHistory = [];
+
+        // ============ 初始化 ============
         document.getElementById('welcomeTime').textContent = getCurrentTime();
+        updateMessageCounter();
 
+        // ============ 工具函数 ============
+        
         // 获取当前时间
         function getCurrentTime() {
             const now = new Date();
             return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // 更新消息计数器
+        function updateMessageCounter() {
+            const rounds = Math.floor(conversationHistory.length / 2);
+            messageCounter.textContent = `对话: ${rounds} 轮`;
         }
 
         // 显示错误消息
@@ -431,14 +459,30 @@
             }
         }
 
-        // 发送消息
+        // 限制对话历史长度（可选）
+        function trimConversationHistory(maxMessages = 30) {
+            if (conversationHistory.length > maxMessages) {
+                conversationHistory = conversationHistory.slice(-maxMessages);
+                console.log(`对话历史已修剪至最近 ${maxMessages} 条消息`);
+            }
+        }
+
+        // ============ 核心功能：多轮对话 ============
+        
         async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
 
-            // 添加用户消息
+            // 添加用户消息到界面
             addMessage(message, true);
             chatInput.value = '';
+
+            // 添加用户消息到对话历史
+            conversationHistory.push({
+                role: "user",
+                content: message
+            });
+            updateMessageCounter();
 
             // 显示打字指示器
             setTyping(true);
@@ -446,35 +490,58 @@
             try {
                 const selectedModel = modelSelector.value;
                 
-                const response = await fetch('/chat', {
+                // 使用 /chat/stream 路由进行多轮对话
+                const response = await fetch('/chat/stream', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        message: message,
+                        messages: conversationHistory,  // 发送完整对话历史
                         model: selectedModel
                     })
                 });
+
+         
 
                 const data = await response.json();
 
                 if (data.error) {
                     showError('错误: ' + data.error);
                     addMessage('抱歉，处理您的请求时出现了错误。请稍后重试。', false);
+                    // 错误时移除最后添加的用户消息
+                    conversationHistory.pop();
                 } else {
+                    // 添加 AI 回复到界面
                     addMessage(data.reply, false);
+                    
+                    // 添加 AI 回复到对话历史
+                    conversationHistory.push({
+                        role: "assistant",
+                        content: data.reply
+                    });
+                    
+                    // 可选：限制历史长度以避免 token 超限
+                    trimConversationHistory(30);
                 }
+                
+                updateMessageCounter();
+                
             } catch (error) {
                 console.error('Error:', error);
                 showError('网络错误: ' + error.message);
                 addMessage('抱歉，无法连接到服务器。请检查服务器是否正在运行。', false);
+                // 错误时移除最后添加的用户消息
+                conversationHistory.pop();
+                updateMessageCounter();
             } finally {
                 setTyping(false);
                 chatInput.focus();
             }
         }
 
+        // ============ 辅助功能 ============
+        
         // 处理键盘事件
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -485,8 +552,14 @@
 
         // 清空对话
         function clearChat() {
-            if (confirm('确定要清空所有对话吗？')) {
+            if (confirm('确定要清空所有对话吗？这将清除对话历史记录。')) {
+                // 清空对话历史数组
+                conversationHistory = [];
+                updateMessageCounter();
+                
+                // 清空界面
                 chatMessages.innerHTML = '';
+                
                 // 重新添加欢迎消息
                 const welcomeMsg = document.createElement('div');
                 welcomeMsg.className = 'message assistant';
@@ -494,18 +567,34 @@
                     <div class="message-avatar">🤖</div>
                     <div>
                         <div class="message-content">
-                            你好！我是 HuggingFace AI 助手。有什么我可以帮助你的吗？
+                            你好！我是 HuggingFace AI 助手。我现在支持多轮对话，可以记住我们之前的聊天内容。有什么我可以帮助你的吗？
                         </div>
                         <div class="message-time">${getCurrentTime()}</div>
                     </div>
                 `;
                 chatMessages.appendChild(welcomeMsg);
+                
+                console.log('对话历史已清空');
             }
         }
 
-        // 页面加载完成后聚焦输入框
+        // 调试功能：查看对话历史（打开浏览器控制台输入 viewHistory() 即可查看）
+        function viewHistory() {
+            console.log('=== 当前对话历史 ===');
+            console.log('消息总数:', conversationHistory.length);
+            console.log('对话轮数:', Math.floor(conversationHistory.length / 2));
+            console.table(conversationHistory);
+            return conversationHistory;
+        }
+
+        // 将调试函数暴露到全局
+        window.viewHistory = viewHistory;
+
+        // ============ 页面加载完成 ============
         window.addEventListener('load', () => {
             chatInput.focus();
+            console.log('✅ 多轮对话功能已启用');
+            console.log('💡 在控制台输入 viewHistory() 可以查看对话历史');
         });
     </script>
 </body>
