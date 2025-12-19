@@ -6,12 +6,24 @@ class HuggingFaceService {
   async chat(messages, modelKey = config.huggingface.defaultModel) {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const model = config.huggingface.models[modelKey] || config.huggingface.models[config.huggingface.defaultModel];
+
+     // 1. 定义你的角色 Prompt (后端逻辑，不影响前端显示)
+       const systemPrompt = {
+      role: "system", 
+      content: `You are an expert customer support agent. Always answer clearly and politely.
+        Examples:
+        Q: How to reset password?
+        A: Please click "Forgot Password" on the login page...`
+    };
+
+        // 2. 核心操作：将系统消息插入到第一位，后面紧跟前端传来的所有对话记录
+    const apiMessages = [systemPrompt, ...messages];
     
     try {
       logger.info('开始调用 HuggingFace API', { 
         requestId, 
         model, 
-        messageCount: messages.length 
+        messageCount: apiMessages.length 
       });
       
       const response = await fetch(config.huggingface.apiUrl, {
@@ -22,7 +34,7 @@ class HuggingFaceService {
         },
         body: JSON.stringify({
           model: model,
-          messages: messages,
+          messages: apiMessages, // 只有这里用到了 system 消息
           max_tokens: config.huggingface.maxTokens,
           temperature: config.huggingface.temperature
         })
