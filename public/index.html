@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HuggingFace AI Chat (Pro Session)</title>
     <style>
-        /* 这里保留您之前的全部 CSS 样式，无需更改 */
+        /* ============ 原有样式 ============ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .chat-container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); width: 100%; max-width: 800px; height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
         .chat-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; }
         .header-controls { display: flex; gap: 10px; align-items: center; }
-        .message-counter { background: rgba(255, 255, 255, 0.2); padding: 6px 12px; border-radius: 15px; font-size: 12px; }
+        .message-counter { background: rgba(255, 255, 255, 0.2); padding: 6px 12px; border-radius: 15px; font-size: 12px; white-space: nowrap; }
         .model-selector { background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .model-selector option { color: #333; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; background: #f8f9fa; }
         .message { display: flex; gap: 12px; animation: slideIn 0.3s ease-out; }
         .message.user { flex-direction: row-reverse; }
@@ -31,11 +32,74 @@
         .chat-input-wrapper { display: flex; gap: 10px; }
         .chat-input { flex: 1; padding: 14px 20px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; }
         .chat-input:focus { border-color: #667eea; }
-        .send-button { width: 50px; height: 50px; border: none; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; }
-        .clear-button { padding: 8px 16px; border: none; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
-        .error-message { background: #fee; color: #c33; padding: 12px 18px; border-radius: 12px; margin: 10px 25px; display: none; }
+        .send-button { width: 50px; height: 50px; border: none; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: transform 0.2s; }
+        .send-button:hover { transform: scale(1.05); }
+        .clear-button { padding: 8px 16px; border: none; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .clear-button:hover { background: rgba(255,255,255,0.3); }
+        .error-message { background: #fee; color: #c33; padding: 12px 18px; border-radius: 12px; margin: 10px 25px; display: none; border: 1px solid #fcc; }
         .error-message.show { display: block; }
         @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+
+        /* ============ 新增样式 ============ */
+        .info-button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        .info-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .session-info-display {
+            display: none; /* 默认隐藏 */
+            background: #e8f4fd;
+            border: 1px solid #b6d4fe;
+            color: #052c65;
+            padding: 15px;
+            margin: 10px 25px;
+            border-radius: 12px;
+            font-size: 13px;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        .session-info-display.show {
+            display: block;
+        }
+
+        .session-info-content {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 15px;
+            align-items: baseline;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #0c5460;
+            text-align: right;
+        }
+
+        .info-value {
+            font-family: monospace;
+            word-break: break-all;
+        }
+        
+        .close-info {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            color: #0c5460;
+            font-weight: bold;
+            opacity: 0.6;
+        }
+        .close-info:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -44,16 +108,23 @@
             <h1>🤖 AI Chat Pro</h1>
             <div class="header-controls">
                 <div class="message-counter" id="messageCounter">消息: 0</div>
-                <button class="clear-button" onclick="clearChat()">清空上下文</button>
+                <button class="info-button" onclick="toggleSessionInfo()">ℹ️ 详情</button>
+                <button class="clear-button" onclick="clearChat()">🗑️ 清空</button>
                 <select class="model-selector" id="modelSelector">
-                    <option value="smollm">SmolLM (快速)</option>
-                    <option value="llama">Llama 3.3 (强大)</option>
-                    <option value="qwen">Qwen 32B (推荐)</option>
+                    <option value="smollm">SmolLM</option>
+                    <option value="llama">Llama 3.3</option>
+                    <option value="qwen">Qwen 32B</option>
                 </select>
             </div>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
+
+        <div id="sessionMessage" class="session-info-display">
+            <span class="close-info" onclick="toggleSessionInfo()">×</span>
+            <div id="sessionContent" class="session-info-content">
+                </div>
+        </div>
 
         <div class="chat-messages" id="chatMessages">
             <div class="message assistant">
@@ -85,24 +156,72 @@
         const typingIndicator = document.getElementById('typingIndicator');
         const modelSelector = document.getElementById('modelSelector');
         const messageCounter = document.getElementById('messageCounter');
+        const sessionMessage = document.getElementById('sessionMessage'); // 获取新容器
 
-        // 1. 初始化 SessionID (持久化，除非关闭浏览器)
+        // 1. 初始化 SessionID
         let currentSessionId = sessionStorage.getItem('chat_session_id') || `sess_${Date.now()}`;
         sessionStorage.setItem('chat_session_id', currentSessionId);
 
         document.getElementById('welcomeTime').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-        // 2. 核心：发送消息（流式）
+        // ============ 新增功能：获取并显示 Session 详情 ============
+        async function toggleSessionInfo() {
+            // 如果已经显示，则隐藏
+            if (sessionMessage.classList.contains('show')) {
+                sessionMessage.classList.remove('show');
+                return;
+            }
+
+            try {
+                // 调用后端接口 GET /chat/session/:sessionId
+                const res = await fetch(`/chat/session/${currentSessionId}`);
+                
+                if (!res.ok) throw new Error("无法获取会话信息");
+                
+                const data = await res.json();
+                
+                // 格式化时间
+                const createTime = new Date(data.createdAt).toLocaleString('zh-CN');
+                const accessTime = new Date(data.lastAccessedAt).toLocaleString('zh-CN');
+
+                // 生成 HTML 内容
+                const contentHtml = `
+                    <div class="info-label">Session ID:</div>
+                    <div class="info-value">${data.sessionId}</div>
+                    
+                    <div class="info-label">创建时间:</div>
+                    <div class="info-value">${createTime}</div>
+                    
+                    <div class="info-label">最后活跃:</div>
+                    <div class="info-value">${accessTime}</div>
+                    
+                    <div class="info-label">消息数量:</div>
+                    <div class="info-value">${data.metadata.messageCount} 条</div>
+                    
+                    <div class="info-label">Token 消耗:</div>
+                    <div class="info-value">${data.metadata.totalTokens} tokens</div>
+                `;
+
+                document.getElementById('sessionContent').innerHTML = contentHtml;
+                sessionMessage.classList.add('show');
+
+            } catch (err) {
+                showError("获取详情失败: " + err.message);
+            }
+        }
+
+        // ============ 核心消息逻辑 ============
         async function sendMessage() {
             const text = chatInput.value.trim();
             if (!text) return;
 
-            // UI 更新
             addMessageToUI(text, true);
             chatInput.value = '';
             setTyping(true);
+            
+            // 如果详情框是打开的，发送消息时暂时关闭它，避免挡视线（可选）
+            // sessionMessage.classList.remove('show');
 
-            // 创建 AI 回复占位符
             const aiMsgObj = createAIMessagePlaceholder();
             let fullContent = "";
 
@@ -119,7 +238,6 @@
 
                 if (!response.ok) throw new Error('服务器响应异常');
 
-                // 读取 Stream
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
 
@@ -134,7 +252,6 @@
                         if (line.startsWith('data: ')) {
                             const dataStr = line.slice(6).trim();
                             if (dataStr === '[DONE]') continue;
-                            
                             try {
                                 const data = JSON.parse(dataStr);
                                 if (data.token) {
@@ -146,10 +263,7 @@
                         }
                     }
                 }
-
-                // 刷新消息计数器
                 updateSessionInfo();
-
             } catch (err) {
                 showError(err.message);
                 aiMsgObj.contentDiv.textContent = "抱歉，连接中断了。";
@@ -160,7 +274,6 @@
         }
 
         // --- 辅助工具 ---
-
         function addMessageToUI(content, isUser) {
             const div = document.createElement('div');
             div.className = `message ${isUser ? 'user' : 'assistant'}`;
@@ -203,6 +316,7 @@
                 chatMessages.innerHTML = '';
                 addMessageToUI("上下文已清除，开始新对话吧！", false);
                 updateSessionInfo();
+                sessionMessage.classList.remove('show'); // 隐藏详情框
             }
         }
 
@@ -213,7 +327,6 @@
         }
 
         function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
-
         function handleKeyPress(e) { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); }
 
         function showError(msg) {
