@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { ChatSession, ChatRequest } from '../models/message';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private apiUrl = 'http://localhost:3000/chat';
+  private apiUrl = environment.chatApiUrl;
   private streamSubject = new Subject<string>();
 
   constructor(private http: HttpClient) {}
