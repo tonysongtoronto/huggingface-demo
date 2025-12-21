@@ -1,0 +1,18 @@
+<!-- src/app/components/chat-input/chat-input.component.html -->
+<div class="chat-input-container">
+  <div class="chat-input-wrapper">
+    <input
+      type="text"
+      class="chat-input"
+      [(ngModel)]="inputText"
+      [disabled]="disabled"
+      (keypress)="onKeyPress($event)"
+      placeholder="输入消息...">
+    <button
+      class="send-button"
+      [disabled]="disabled"
+      (click)="onSend()">
+      ➤
+    </button>
+  </div>
+</div>

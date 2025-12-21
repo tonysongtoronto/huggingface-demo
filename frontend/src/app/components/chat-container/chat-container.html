@@ -1,0 +1,34 @@
+<!-- src/app/components/chat-container/chat-container.component.html -->
+<div class="chat-container">
+  <app-chat-header
+    [messageCount]="messageCount"
+    [models]="models"
+    [selectedModel]="selectedModel"
+    (modelChange)="onModelChange($event)"
+    (clearChat)="clearChat()"
+    (toggleInfo)="toggleSessionInfo()">
+  </app-chat-header>
+
+  <div *ngIf="errorMessage" class="error-message show">
+    {{ errorMessage }}
+  </div>
+
+  <app-session-info
+    *ngIf="showSessionInfo"
+    [sessionInfo]="sessionInfo"
+    (close)="toggleSessionInfo()">
+  </app-session-info>
+
+  <app-chat-messages
+    [messages]="messages">
+  </app-chat-messages>
+
+  <app-typing-indicator
+    [isActive]="isTyping">
+  </app-typing-indicator>
+
+  <app-chat-input
+    [disabled]="isTyping"
+    (sendMessage)="onSendMessage($event)">
+  </app-chat-input>
+</div>

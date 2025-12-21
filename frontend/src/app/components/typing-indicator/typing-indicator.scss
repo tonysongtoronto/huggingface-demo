@@ -1,0 +1,64 @@
+/* src/app/components/typing-indicator/typing-indicator.component.css */
+
+/* 输入指示器样式已在全局 styles.css 中定义 */
+
+:host {
+  display: block;
+}
+
+.typing-indicator {
+  display: none;
+  gap: 12px;
+  padding: 10px 25px;
+  background: #f8f9fa;
+}
+
+.typing-indicator.active {
+  display: flex;
+}
+
+.message-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.typing-dots {
+  display: flex;
+  gap: 5px;
+  padding: 12px 18px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  background: #999;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}

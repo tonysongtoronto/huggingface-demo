@@ -1,5 +1,6 @@
 import express from "express";
 import chatRoutes from './routes/chatRoutes.js';
+import cors from 'cors';
 
 import systemRoutes from './routes/systemRoutes.js';
 import requestLogger from './middleware/requestLogger.js';
@@ -8,6 +9,12 @@ import connectDB from './db/connect.js';
 
 
 const app = express();
+
+app.use(cors({
+  origin: 'http://localhost:4200',
+  credentials: true   // 如果你用 cookie / session，一定要 true
+}));
+
 // === 1. 连接数据库 ===
 connectDB();
 

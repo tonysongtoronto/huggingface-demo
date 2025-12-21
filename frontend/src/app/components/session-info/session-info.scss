@@ -1,0 +1,71 @@
+/* src/app/components/session-info/session-info.component.css */
+
+/* 由于样式已经在全局 styles.css 中定义，这里可以为空 */
+/* 如果需要组件特定样式，可以在这里添加 */
+
+/* 或者，如果你想将样式移到组件内部，可以使用以下代码： */
+
+:host {
+  display: block;
+}
+
+.session-info-display {
+  background: #e8f4fd;
+  border: 1px solid #b6d4fe;
+  color: #052c65;
+  padding: 15px;
+  margin: 10px 25px;
+  border-radius: 12px;
+  font-size: 13px;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+}
+
+.session-info-display.show {
+  display: block;
+}
+
+.session-info-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 15px;
+  align-items: baseline;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #0c5460;
+  text-align: right;
+}
+
+.info-value {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.close-info {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  cursor: pointer;
+  color: #0c5460;
+  font-weight: bold;
+  opacity: 0.6;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.close-info:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

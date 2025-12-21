@@ -1,0 +1,20 @@
+<!-- src/app/components/session-info/session-info.component.html -->
+<div class="session-info-display show" *ngIf="sessionInfo">
+  <span class="close-info" (click)="onClose()">×</span>
+  <div class="session-info-content">
+    <div class="info-label">Session ID:</div>
+    <div class="info-value">{{ sessionInfo.sessionId }}</div>
+
+    <div class="info-label">创建时间:</div>
+    <div class="info-value">{{ formatDate(sessionInfo!.createdAt) }}</div>
+
+    <div class="info-label">最后活跃:</div>
+    <div class="info-value">{{ formatDate(sessionInfo!.lastAccessedAt) }}</div>
+
+    <div class="info-label">消息数量:</div>
+    <div class="info-value">{{ sessionInfo?.metadata?.messageCount }} 条</div>
+
+    <div class="info-label">Token 消耗:</div>
+    <div class="info-value">{{ sessionInfo?.metadata?.totalTokens }} tokens</div>
+  </div>
+</div>

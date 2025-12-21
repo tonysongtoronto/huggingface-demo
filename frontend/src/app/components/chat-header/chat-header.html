@@ -1,0 +1,17 @@
+<!-- src/app/components/chat-header/chat-header.component.html -->
+<div class="chat-header">
+  <h1>🤖 AI Chat Pro</h1>
+  <div class="header-controls">
+    <div class="message-counter">消息: {{ messageCount }}</div>
+    <button class="info-button" (click)="onInfoClick()">ℹ️ 详情</button>
+    <button class="clear-button" (click)="onClearClick()">🗑️ 清空</button>
+    <select
+      class="model-selector"
+      [value]="selectedModel"
+      (change)="onModelChange($event)">
+      <option *ngFor="let model of models" [value]="model.value">
+        {{ model.label }}
+      </option>
+    </select>
+  </div>
+</div>
