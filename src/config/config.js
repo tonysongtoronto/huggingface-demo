@@ -29,5 +29,7 @@ export const config = {
     maxMessagesPerSession: 50,
     sessionTimeout: 24 * 60 * 60 * 1000, // 24 小时
     cleanupInterval: 60 * 60 * 1000 // 1 小时
-  }
+  },
+   mongoUri: process.env.MONGO_URI,
+  mongoDbName: process.env.MONGO_DB_NAME
 };

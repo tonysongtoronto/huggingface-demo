@@ -1,73 +1,66 @@
 import { ChatSession } from '../models/Session.js';
-import { config } from '../config/config.js';
 import logger from '../../logger.js';
 
 class SessionService {
-  constructor() {
-    this.sessions = new Map();
-    this.startCleanupTimer();
-  }
+  // 注意：不再需要 constructor 中的定时器和 Map
 
-  getOrCreateSession(sessionId) {
-    if (!this.sessions.has(sessionId)) {
-      const session = new ChatSession(sessionId);
-      this.sessions.set(sessionId, session);
-      logger.info('创建新会话', { sessionId });
+  // 获取或创建会话 (Async)
+  async getOrCreateSession(sessionId) {
+    let session = await ChatSession.findOne({ sessionId });
+    
+    if (!session) {
+      session = new ChatSession({ sessionId });
+      await session.save();
+      logger.info('创建新会话 (DB)', { sessionId });
+    } else {
+      // 访问时刷新时间
+      session.lastAccessedAt = Date.now();
+      await session.save();
     }
-    return this.sessions.get(sessionId);
+    
+    return session;
   }
 
-  getSession(sessionId) {
-    return this.sessions.get(sessionId);
+  // 获取会话 (Async)
+  async getSession(sessionId) {
+    return await ChatSession.findOne({ sessionId });
   }
 
-  deleteSession(sessionId) {
-    const deleted = this.sessions.delete(sessionId);
-    if (deleted) {
-      logger.info('销毁会话', { sessionId });
+  // 删除会话 (Async)
+  async deleteSession(sessionId) {
+    const result = await ChatSession.findOneAndDelete({ sessionId });
+    if (result) {
+      logger.info('销毁会话 (DB)', { sessionId });
     }
-    return deleted;
+    return !!result;
   }
 
-  getAllSessions() {
-    return Array.from(this.sessions.values()).map(session => ({
-      sessionId: session.sessionId,
-      messageCount: session.metadata.messageCount,
-      totalTokens: session.metadata.totalTokens,
-      createdAt: session.createdAt,
-      lastAccessedAt: session.lastAccessedAt
+  // 获取所有会话列表 (Async)
+  // 注意：生产环境如果数据量大，这里应该做分页
+  async getAllSessions() {
+    const sessions = await ChatSession.find({}, { 
+      sessionId: 1, 
+      'metadata.messageCount': 1, 
+      'metadata.totalTokens': 1, 
+      createdAt: 1, 
+      lastAccessedAt: 1 
+    }).lean(); // .lean() 提高查询性能，返回纯 JS 对象
+
+    return sessions.map(s => ({
+      sessionId: s.sessionId,
+      messageCount: s.metadata?.messageCount || 0,
+      totalTokens: s.metadata?.totalTokens || 0,
+      createdAt: s.createdAt,
+      lastAccessedAt: s.lastAccessedAt
     }));
   }
 
-  cleanupExpiredSessions() {
-    let cleanedCount = 0;
-    const timeout = config.session.sessionTimeout;
-
-    for (const [sessionId, session] of this.sessions.entries()) {
-      if (session.isExpired(timeout)) {
-        this.sessions.delete(sessionId);
-        cleanedCount++;
-        logger.info('清理过期会话', { sessionId });
-      }
-    }
-
-    if (cleanedCount > 0) {
-      logger.info('会话清理完成', { 
-        cleanedCount, 
-        remainingSessions: this.sessions.size 
-      });
-    }
+  // 获取会话总数 (Async)
+  async getSessionCount() {
+    return await ChatSession.countDocuments();
   }
-
-  startCleanupTimer() {
-    setInterval(() => {
-      this.cleanupExpiredSessions();
-    }, config.session.cleanupInterval);
-  }
-
-  getSessionCount() {
-    return this.sessions.size;
-  }
+  
+  // 原有的 cleanupExpiredSessions 已被 MongoDB TTL 索引取代，无需代码实现
 }
 
 export default new SessionService();
