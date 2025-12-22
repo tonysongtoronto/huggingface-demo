@@ -9,15 +9,19 @@
     (toggleInfo)="toggleSessionInfo()">
   </app-chat-header>
 
-  <div *ngIf="errorMessage" class="error-message show">
+
+  @if (errorMessage) {
+  <div class="error-message show">
     {{ errorMessage }}
   </div>
+}
 
+ @if (showSessionInfo) {
   <app-session-info
-    *ngIf="showSessionInfo"
     [sessionInfo]="sessionInfo"
     (close)="toggleSessionInfo()">
   </app-session-info>
+}
 
   <app-chat-messages
     [messages]="messages">

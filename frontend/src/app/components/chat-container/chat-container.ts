@@ -17,7 +17,10 @@ import { CommonModule } from '@angular/common';
   styleUrl: './chat-container.scss',
   imports: [ChatHeaderComponent, CommonModule,    SessionInfoComponent, ChatMessagesComponent, ChatInputComponent, TypingIndicatorComponent]
 })
+
+
 export class ChatContainerComponent implements OnInit {
+
   messages: Message[] = [];
   isTyping = false;
   selectedModel = 'llama';
@@ -46,6 +49,7 @@ export class ChatContainerComponent implements OnInit {
   }
 
   private addWelcomeMessage(): void {
+
     this.messages.push({
       id: `msg_${Date.now()}`,
       content: '你好！会话模式已开启，我会记住我们的聊天历史。请问有什么可以帮您？',
@@ -107,6 +111,8 @@ export class ChatContainerComponent implements OnInit {
   }
 
   async toggleSessionInfo(): Promise<void> {
+
+    
     if (this.showSessionInfo) {
       this.showSessionInfo = false;
       return;
