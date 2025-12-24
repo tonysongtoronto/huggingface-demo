@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@huggingface/inference": "^4.13.5",
+    "@huggingface/transformers": "^3.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.19.2",
