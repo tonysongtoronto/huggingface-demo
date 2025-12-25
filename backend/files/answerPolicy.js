@@ -1,7 +1,12 @@
 export class AnswerPolicy {
-  constructor({ highThreshold = 0.75, lowThreshold = 0.5 } = {}) {
+  constructor({
+    highThreshold = 0.90,
+    lowThreshold = 0.85,
+    minGapForStrict = 0.05
+  } = {}) {
     this.highThreshold = highThreshold;
     this.lowThreshold = lowThreshold;
+    this.minGapForStrict = minGapForStrict;
   }
 
   decide(topDocs) {
@@ -9,16 +14,30 @@ export class AnswerPolicy {
       return { answer_type: "llm_only", confidence: 0.3 };
     }
 
-    const score = topDocs[0].score;
+    const topScore = topDocs[0].score;
 
-    if (score >= this.highThreshold) {
-      return { answer_type: "rag_strict", confidence: Math.min(score, 0.95) };
+    // top1 和 top2 差距太小 → 区分度不足，降级
+    const hasLowDiscrimination = topDocs.length >= 2 && 
+      (topDocs[0].score - topDocs[1].score) < this.minGapForStrict;
+
+    if (topScore >= this.highThreshold && !hasLowDiscrimination) {
+      return { 
+        answer_type: "rag_strict", 
+        confidence: topScore 
+      };
     }
 
-    if (score >= this.lowThreshold) {
-      return { answer_type: "rag_hybrid", confidence: score };
+    if (topScore >= this.lowThreshold) {
+      return { 
+        answer_type: "rag_hybrid", 
+        confidence: topScore 
+      };
     }
 
-    return { answer_type: "llm_only", confidence: score };
+    // 低于 lowThreshold 一律走 llm_only，置信度固定 0.3
+    return { 
+      answer_type: "llm_only", 
+      confidence: 0.3 
+    };
   }
 }
