@@ -6,7 +6,7 @@
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}/backend",
-      "program": "${workspaceFolder}/backend/embeddings.js",
+      "program": "${workspaceFolder}/backend/rag-tests.js",
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"]
     },

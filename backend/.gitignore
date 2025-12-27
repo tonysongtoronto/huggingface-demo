@@ -39,6 +39,7 @@ desktop.ini
 # Build outputs
 dist/
 build/
+output/
 out/
 *.log
 

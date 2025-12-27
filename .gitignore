@@ -5,3 +5,7 @@ frontend/node_modules/
 
 # 或者更简单的写法
 **/node_modules/
+frontend/dist/
+backend/logs/
+backend/output/
+.continue/
