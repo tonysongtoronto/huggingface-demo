@@ -15,7 +15,7 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-// 控制台输出格式（更易读）
+// 控制台输出格式（更易读）dev_update
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
