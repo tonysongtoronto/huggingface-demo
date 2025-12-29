@@ -2,12 +2,13 @@ import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// 获取当前文件的目录路径（ES modules）  rebase
+
 // 获取当前文件的目录路径（ES modules）
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 定义日志格式
+// 定义日志格式 main chang base
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
