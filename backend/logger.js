@@ -2,7 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-
+// 获取当前文件的目录路径（ES modules）  rebase
 // 获取当前文件的目录路径（ES modules）
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
