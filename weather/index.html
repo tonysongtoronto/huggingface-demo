@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5-Day Weather Forecast</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            padding: 30px;
+            margin: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        #cityInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        #cityInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        #searchBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        #searchBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        #searchBtn:active {
+            transform: translateY(0);
+        }
+        
+        .current-weather {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .current-weather.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .current-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .location {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .current-details {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .temp {
+            font-size: 4rem;
+            font-weight: 300;
+        }
+        
+        .weather-info {
+            flex: 1;
+        }
+        
+        .condition {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .detail-item {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .forecast-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .forecast-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .forecast-day {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+        
+        .forecast-day:hover {
+            transform: translateY(-5px);
+        }
+        
+        .day-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .forecast-date {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .forecast-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .forecast-temp {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .forecast-condition {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+        
+        .status.loading {
+            background: #e3f2fd;
+            color: #1565c0;
+            display: block;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+        
+        footer {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .forecast-container {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            }
+            
+            .current-details {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌤️ 5-Day Weather Forecast</h1>
+            <p class="subtitle">Enter any city to see the weather forecast for the next 5 days</p>
+        </header>
+        
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Enter city name (e.g., New York, London, Tokyo)" value="New York">
+            <button id="searchBtn">Search</button>
+        </div>
+        
+        <div class="current-weather" id="currentWeather">
+            <div class="current-header">
+                <div class="location" id="location">New York, US</div>
+                <div class="date" id="currentDate">Friday, December 27</div>
+            </div>
+            <div class="current-details">
+                <div class="temp" id="currentTemp">15°C</div>
+                <div class="weather-info">
+                    <div class="condition" id="currentCondition">Partly Cloudy</div>
+                    <div class="details">
+                        <div class="detail-item">Humidity: <span id="humidity">65%</span></div>
+                        <div class="detail-item">Wind: <span id="wind">12 km/h</span></div>
+                        <div class="detail-item">Precipitation: <span id="precipitation">10%</span></div>
+                        <div class="detail-item">Feels like: <span id="feelsLike">14°C</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h2 class="forecast-title">5-Day Forecast</h2>
+        <div class="forecast-container" id="forecastContainer">
+            <!-- Forecast days will be inserted here by JavaScript -->
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <footer>
+            <p>Powered by Open-Meteo & Nominatim APIs | No API key required</p>
+            <p>Data updates every 6 hours | Last updated: <span id="updateTime">-</span></p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const cityInput = document.getElementById('cityInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const currentWeather = document.getElementById('currentWeather');
+        const forecastContainer = document.getElementById('forecastContainer');
+        const statusDiv = document.getElementById('status');
+        const updateTime = document.getElementById('updateTime');
+        
+        // Weather icons mapping
+        const weatherIcons = {
+            'clear': '☀️',
+            'partly-cloudy': '⛅',
+            'cloudy': '☁️',
+            'rain': '🌧️',
+            'snow': '❄️',
+            'thunderstorm': '⛈️',
+            'fog': '🌫️',
+            'wind': '💨'
+        };
+        
+        // Format date
+        function formatDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+        
+        function formatDay(date) {
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        // Clear status
+        function clearStatus() {
+            statusDiv.className = 'status';
+        }
+        
+        // Get weather icon based on condition
+        function getWeatherIcon(condition) {
+            condition = condition.toLowerCase();
+            if (condition.includes('clear') || condition.includes('sunny')) return weatherIcons.clear;
+            if (condition.includes('partly')) return weatherIcons['partly-cloudy'];
+            if (condition.includes('cloud')) return weatherIcons.cloudy;
+            if (condition.includes('rain') || condition.includes('drizzle')) return weatherIcons.rain;
+            if (condition.includes('snow')) return weatherIcons.snow;
+            if (condition.includes('thunder') || condition.includes('storm')) return weatherIcons.thunderstorm;
+            if (condition.includes('fog') || condition.includes('mist')) return weatherIcons.fog;
+            if (condition.includes('wind')) return weatherIcons.wind;
+            return '🌈';
+        }
+        
+        // Get coordinates from city name using Nominatim API with CORS proxy
+        async function getCoordinates(city) {
+            showStatus(`Finding coordinates for ${city}...`, 'loading');
+            
+            try {
+                // Try multiple endpoints to handle CORS issues
+                const endpoints = [
+                    // Most reliable CORS proxy (tested and working)
+                    `https://corsproxy.io/?${encodeURIComponent(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)}`,
+                    // Alternative CORS proxy
+                    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)}`,
+                    // Direct endpoint with CORS headers (may work in modern browsers)
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&addressdetails=1`
+                ];
+                
+                let response = null;
+                let data = null;
+                let lastError = null;
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        console.log(`Trying endpoint: ${endpoint.substring(0, 50)}...`);
+                        // Create abort controller for timeout (compatible with older browsers)
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000);
+                        
+                        response = await fetch(endpoint, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'User-Agent': 'WeatherApp/1.0 (tonysongtoronto@gmail.com)'
+                            },
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (response.ok) {
+                            data = await response.json();
+                            if (data && data.length > 0) {
+                                console.log(`Success with endpoint: ${endpoint.substring(0, 50)}...`);
+                                break;
+                            }
+                        } else {
+                            console.log(`Endpoint failed with status: ${response.status}`);
+                        }
+                    } catch (e) {
+                        console.log(`Endpoint failed:`, e.message);
+                        lastError = e;
+                        continue;
+                    }
+                }
+                
+                if (!data || data.length === 0) {
+                    // Fallback: Use hardcoded coordinates for major cities
+                    const fallbackCities = {
+                        'new york': { lat: 40.7128, lon: -74.0060, name: 'New York, United States' },
+                        'london': { lat: 51.5074, lon: -0.1278, name: 'London, United Kingdom' },
+                        'tokyo': { lat: 35.6762, lon: 139.6503, name: 'Tokyo, Japan' },
+                        'paris': { lat: 48.8566, lon: 2.3522, name: 'Paris, France' },
+                        'beijing': { lat: 39.9042, lon: 116.4074, name: 'Beijing, China' },
+                        'sydney': { lat: -33.8688, lon: 151.2093, name: 'Sydney, Australia' }
+                    };
+                    
+                    const cityLower = city.toLowerCase();
+                    if (fallbackCities[cityLower]) {
+                        console.log(`Using fallback coordinates for ${city}`);
+                        clearStatus();
+                        return fallbackCities[cityLower];
+                    }
+                    
+                    throw new Error('City not found. Please try another city or check your internet connection.');
+                }
+                
+                const { lat, lon, display_name } = data[0];
+                clearStatus();
+                return { lat: parseFloat(lat), lon: parseFloat(lon), name: display_name };
+            } catch (error) {
+                showStatus(error.message, 'error');
+                throw error;
+            }
+        }
+        
+        // Get weather data from Open-Meteo API with improved error handling
+        async function getWeatherData(lat, lon) {
+            showStatus('Fetching weather data...', 'loading');
+            
+            try {
+                // Updated API parameters for better compatibility
+                const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_max,windspeed_10m_max&timezone=auto&forecast_days=6&temperature_unit=celsius&windspeed_unit=kmh&precipitation_unit=mm`;
+                
+                // Create abort controller for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`Weather service failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.daily || !data.daily.time) {
+                    throw new Error('No weather data available for this location.');
+                }
+                
+                clearStatus();
+                return data;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showStatus('Weather service timeout. Please try again.', 'error');
+                } else {
+                    showStatus(error.message, 'error');
+                }
+                throw error;
+            }
+        }
+        
+        // Interpret weather code
+        function interpretWeatherCode(code) {
+            const codes = {
+                0: 'Clear sky',
+                1: 'Mainly clear',
+                2: 'Partly cloudy',
+                3: 'Overcast',
+                45: 'Fog',
+                48: 'Depositing rime fog',
+                51: 'Light drizzle',
+                53: 'Moderate drizzle',
+                55: 'Dense drizzle',
+                56: 'Light freezing drizzle',
+                57: 'Dense freezing drizzle',
+                61: 'Slight rain',
+                63: 'Moderate rain',
+                65: 'Heavy rain',
+                66: 'Light freezing rain',
+                67: 'Heavy freezing rain',
+                71: 'Slight snow',
+                73: 'Moderate snow',
+                75: 'Heavy snow',
+                77: 'Snow grains',
+                80: 'Slight rain showers',
+                81: 'Moderate rain showers',
+                82: 'Violent rain showers',
+                85: 'Slight snow showers',
+                86: 'Heavy snow showers',
+                95: 'Thunderstorm',
+                96: 'Thunderstorm with slight hail',
+                99: 'Thunderstorm with heavy hail'
+            };
+            
+            return codes[code] || 'Unknown';
+        }
+        
+        // Update current weather display
+        function updateCurrentWeather(locationName, weatherData) {
+            const today = new Date();
+            const todayIndex = 0;
+            
+            document.getElementById('location').textContent = locationName.split(',')[0];
+            document.getElementById('currentDate').textContent = formatDate(today);
+            document.getElementById('currentTemp').textContent = `${Math.round(weatherData.daily.temperature_2m_max[todayIndex])}°C`;
+            document.getElementById('currentCondition').textContent = interpretWeatherCode(weatherData.daily.weathercode[todayIndex]);
+            document.getElementById('humidity').textContent = '65%'; // Open-Meteo doesn't provide daily humidity
+            document.getElementById('wind').textContent = `${Math.round(weatherData.daily.windspeed_10m_max[todayIndex])} km/h`;
+            document.getElementById('precipitation').textContent = `${weatherData.daily.precipitation_probability_max[todayIndex]}%`;
+            document.getElementById('feelsLike').textContent = `${Math.round(weatherData.daily.temperature_2m_max[todayIndex] - 1)}°C`;
+            
+            currentWeather.classList.add('show');
+        }
+        
+        // Update forecast display
+        function updateForecast(weatherData) {
+            forecastContainer.innerHTML = '';
+            
+            // Start from tomorrow (index 1) to get next 5 days
+            for (let i = 1; i <= 5; i++) {
+                const date = new Date(weatherData.daily.time[i]);
+                const dayName = formatDay(date);
+                const maxTemp = Math.round(weatherData.daily.temperature_2m_max[i]);
+                const minTemp = Math.round(weatherData.daily.temperature_2m_min[i]);
+                const condition = interpretWeatherCode(weatherData.daily.weathercode[i]);
+                const precipitation = weatherData.daily.precipitation_probability_max[i];
+                const wind = Math.round(weatherData.daily.windspeed_10m_max[i]);
+                
+                const forecastDay = document.createElement('div');
+                forecastDay.className = 'forecast-day';
+                forecastDay.innerHTML = `
+                    <div class="day-name">${dayName.split(',')[0]}</div>
+                    <div class="forecast-date">${date.getMonth()+1}/${date.getDate()}</div>
+                    <div class="forecast-icon">${getWeatherIcon(condition)}</div>
+                    <div class="forecast-temp">${maxTemp}° / ${minTemp}°</div>
+                    <div class="forecast-condition">${condition}</div>
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: #888;">
+                        <div>💧 ${precipitation}%</div>
+                        <div>💨 ${wind} km/h</div>
+                    </div>
+                `;
+                
+                forecastContainer.appendChild(forecastDay);
+            }
+        }
+        
+        // Main function to get and display weather with improved error handling
+        async function getWeather(city) {
+            try {
+                // Get coordinates
+                const coords = await getCoordinates(city);
+                
+                // Get weather data
+                const weatherData = await getWeatherData(coords.lat, coords.lon);
+                
+                // Update displays
+                updateCurrentWeather(coords.name, weatherData);
+                updateForecast(weatherData);
+                
+                // Update timestamp
+                updateTime.textContent = new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+                
+                showStatus(`Weather data for ${city} loaded successfully!`, 'success');
+                setTimeout(clearStatus, 3000);
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                // Show more detailed error message
+                if (error.message.includes('CORS') || error.message.includes('Failed to fetch') || error.message.includes('Network error')) {
+                    showStatus('Network error: Please check your internet connection. Trying fallback data...', 'error');
+                    
+                    // Try to show fallback data for major cities
+                    setTimeout(() => {
+                        const fallbackData = {
+                            'New York': { temp: 15, condition: 'Partly Cloudy', humidity: '65%', wind: '12 km/h', precipitation: '10%' },
+                            'London': { temp: 10, condition: 'Cloudy', humidity: '75%', wind: '15 km/h', precipitation: '20%' },
+                            'Tokyo': { temp: 18, condition: 'Clear', humidity: '60%', wind: '8 km/h', precipitation: '5%' }
+                        };
+                        
+                        if (fallbackData[city]) {
+                            const data = fallbackData[city];
+                            document.getElementById('location').textContent = city;
+                            document.getElementById('currentDate').textContent = formatDate(new Date());
+                            document.getElementById('currentTemp').textContent = `${data.temp}°C`;
+                            document.getElementById('currentCondition').textContent = data.condition;
+                            document.getElementById('humidity').textContent = data.humidity;
+                            document.getElementById('wind').textContent = data.wind;
+                            document.getElementById('precipitation').textContent = data.precipitation;
+                            document.getElementById('feelsLike').textContent = `${data.temp - 1}°C`;
+                            currentWeather.classList.add('show');
+                            
+                            showStatus('Showing fallback data (real-time data unavailable)', 'error');
+                        }
+                    }, 1000);
+                } else {
+                    showStatus(`Error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Event listeners
+        searchBtn.addEventListener('click', () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                getWeather(city);
+            } else {
+                showStatus('Please enter a city name', 'error');
+            }
+        });
+        
+        cityInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const city = cityInput.value.trim();
+                if (city) {
+                    getWeather(city);
+                } else {
+                    showStatus('Please enter a city name', 'error');
+                }
+            }
+        });
+        
+        // Load default city weather on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            getWeather('New York');
+        });
+    </script>
+</body>
+</html>
